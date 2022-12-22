@@ -1,0 +1,43 @@
+version: '3.8'
+
+services:
+  application:
+    container_name: application
+    build:
+      context: ./
+    restart: unless-stopped
+    environment: 
+      - MYSQL_HOST=mysql-db
+      - MYSQL_USER=appuser
+      - MYSQL_PASSWORD=password
+      - MYSQL_DATABASE=appdb
+    networks:
+      - public
+    depends_on:
+      - mysql-db
+
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql-db
+    command: --default-authentication-plugin=mysql_native_password 
+    restart: unless-stopped
+    security_opt:
+      - seccomp:unconfined
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_USER=appuser
+      - MYSQL_PASSWORD=password
+      - MYSQL_DATABASE=appdb
+    volumes:
+      - ./data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysql" ,"-h", "mysql-db", "-P", "3306", "-u", "root", "-prootpassword", "-e", "SELECT VERSION()"]
+      interval: 5s
+      timeout: 3s
+      retries: 30
+    networks:
+      - public
+
+networks:
+  public:
+    name: public
